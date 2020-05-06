@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func printBoard(board [][]uint8) {
+func printBoard(board [][]int8) {
 	letters := "      A B C D E F G H I J K L M N O P Q R S"
 	fmt.Println()
 	fmt.Println(letters)
@@ -15,7 +15,7 @@ func printBoard(board [][]uint8) {
 		fmt.Printf("%5.d", i+1)
 
 		for j := range board[i] {
-			point := board[i][j]
+			point := board[j][i]
 			if point == 0 {
 				if j != 0 {
 					fmt.Print("─┼")
@@ -24,7 +24,7 @@ func printBoard(board [][]uint8) {
 				}
 			} else if point == 1 {
 				fmt.Print("⚫")
-			} else if point == 2 {
+			} else if point == -1 {
 				fmt.Print("⚪")
 			}
 		}
@@ -39,13 +39,16 @@ func main() {
 	game := gogame.Game{}
 	game.NewGame(19)
 
-	game.MakeMove(2, 2, 0)
-	game.MakeMove(1, 2, 0)
+	game.MakeMove(4, 3)
+	game.MakeMove(4, 4)
+	game.MakeMove(4, 5)
+	game.MakeMove(7, 5)
+	game.MakeMove(3, 4)
+	game.MakeMove(8, 5)
 
-	turnBlack := true
 	for {
 		printBoard(game.Board)
-		if turnBlack {
+		if game.TurnColor == 1 {
 			fmt.Print(" ⚫ -> ")
 		} else {
 			fmt.Print(" ⚪ -> ")
@@ -59,7 +62,6 @@ func main() {
 		}
 		y--
 
-		game := gogame.Game{}
-		game.MakeMove(int(x), y, 0)
+		game.MakeMove(int(x), y)
 	}
 }
