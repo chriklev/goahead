@@ -46,8 +46,14 @@ func (g *Game) MakeMove(x, y int) bool {
 		dx, dy = dy, -dx
 	}
 
-	g.TurnColor *= -1
+	var xVisited []int
+	var yVisited []int
+	if !g.groupHasFreedom(x, y, &xVisited, &yVisited, g.TurnColor) {
+		g.Board[x][y] = 0
+		return false
+	}
 
+	g.TurnColor *= -1
 	return true
 }
 
