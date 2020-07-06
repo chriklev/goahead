@@ -33,12 +33,14 @@ func NewGame() (g Game) {
 	return
 }
 
-func (g *Game) newGroup(x, y int, color int8) {
+// Adds a new stone and group to the game, but does not add freedoms or remove freedoms from neighboring groups
+func (g *Game) addStone(x, y int) {
+	g.board[x][y] = g.turncolor
+
 	var newgroup group
 	newgroup.stones = make([][2]int, 1)
 	newgroup.stones[0] = [2]int{x, y}
-	newgroup.color = color
-	// then add freedoms
+	newgroup.color = g.turncolor
 
 	g.groups = append(g.groups, &newgroup)
 	g.groupboard[x][y] = &newgroup
@@ -49,6 +51,7 @@ func (g *Game) MakeMove(x, y int) bool {
 	// If move is pass
 	if x == -1 && y == -1 {
 		g.pass()
+		g.boardhist = append(g.boardhist, g.board)
 		return true
 	}
 	// If the move is outside of board bounds
@@ -60,18 +63,43 @@ func (g *Game) MakeMove(x, y int) bool {
 		return false
 	}
 
-	// For each neighbour
+	g.boardhist = append(g.boardhist, g.board)
+	g.addStone(x, y)
+
+	visitedgroups := make(map[*group]bool)
+
+	// For each neighbor
 	dx, dy := 1, 0
 	for i := 0; i < 4; i++ {
 		nx, ny := x+dx, y+dy
-		// If current neighbour is oposite color
-		if g.board[nx][ny] == -g.turncolor {
-			g.removeFreedom(g.groupboard[nx][ny], x, y)
+
+		if x >= 0 && x < bsize && y >= 0 && y < bsize {
+			switch g.board[nx][ny] {
+			case -g.turncolor: // if enemy group, then remove their freedom
+				ngroup := g.groupboard[nx][ny]
+				if !visitedgroups[ngroup] {
+					g.removeFreedom(ngroup, x, y)
+					visitedgroups[ngroup] = true
+				}
+			case g.turncolor: // if allied group, then merge
+				ngroup := g.groupboard[nx][ny]
+				if !visitedgroups[ngroup] {
+					g.mergeGroups(g.groupboard[x][y], ngroup)
+					visitedgroups[ngroup] = true
+				}
+			case 0: // if empty then add as freedom
+				g.addFreedom(g.groupboard[x][y], x, y)
+			}
 		}
 		dx, dy = dy, -dx
 	}
 
 	return true
+}
+
+func (g *Game) mergeGroups(gr1, gr2 *group) {
+	gr2.stones = append(gr2.stones, gr1.stones...)
+
 }
 
 func (g *Game) pass() {
@@ -93,6 +121,19 @@ func (g *Game) removeFreedom(gr *group, x, y int) {
 	log.Fatalln("The group you tried to remove a freedom from did not have that freedom.")
 }
 
+func (g *Game) addFreedom(gr *group, x, y int) {
+	gr.freedoms = append(gr.freedoms, [2]int{x, y})
+}
+
 func (g *Game) removeGroup(gr *group) {
 
+}
+
+func appendIfDoesNotContainGroup(s *[]*group, gr *group) {
+	for _, a := range *s {
+		if a == gr {
+			return
+		}
+	}
+	*s = append(*s, gr)
 }
